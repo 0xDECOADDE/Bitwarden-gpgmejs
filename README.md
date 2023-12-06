@@ -1,44 +1,43 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/bitwarden/brand/master/screenshots/apps-combo-logo.png" alt="Bitwarden" />
-</p>
-<p align="center">
-  <a href="https://github.com/bitwarden/clients/actions/workflows/build-browser.yml?query=branch:master" target="_blank">
-    <img src="https://github.com/bitwarden/clients/actions/workflows/build-browser.yml/badge.svg?branch=master" alt="Github Workflow browser build on master" />
-  </a>
-  <a href="https://github.com/bitwarden/clients/actions/workflows/build-cli.yml?query=branch:master" target="_blank">
-    <img src="https://github.com/bitwarden/clients/actions/workflows/build-cli.yml/badge.svg?branch=master" alt="Github Workflow CLI build on master" />
-  </a>
-  <a href="https://github.com/bitwarden/clients/actions/workflows/build-desktop.yml?query=branch:master" target="_blank">
-    <img src="https://github.com/bitwarden/clients/actions/workflows/build-desktop.yml/badge.svg?branch=master" alt="Github Workflow desktop build on master" />
-  </a>
-    <a href="https://github.com/bitwarden/clients/actions/workflows/build-web.yml?query=branch:master" target="_blank">
-    <img src="https://github.com/bitwarden/clients/actions/workflows/build-web.yml/badge.svg?branch=master" alt="Github Workflow web build on master" />
-  </a>
-  <a href="https://gitter.im/bitwarden/Lobby" target="_blank">
-    <img src="https://badges.gitter.im/bitwarden/Lobby.svg" alt="gitter chat" />
-  </a>
-</p>
+# Bitwarden browser extension with gpgmejs support
 
----
+This repository is a fork from Bitwarden-clients and gpgmejs.
+- [bitwarden/clients](https://github.com/bitwarden/clients);
+- [mailvelope/gpgmejs](https://github.com/mailvelope/gpgmejs);
 
-# Bitwarden Client Applications
+## Project Status
 
-This repository houses all Bitwarden client applications except the [Mobile application](https://github.com/bitwarden/mobile).
+This personal project is just a proof of concept, the author has little knowledge of node/angular and likely did not follow related best-practices. Technical knowledge of opengpg, gpgmejs and yubikey is advised.
 
-Please refer to the [Clients section](https://contributing.bitwarden.com/getting-started/clients/) of the [Contributing Documentation](https://contributing.bitwarden.com/) for build instructions, recommended tooling, code style tips, and lots of other great information to get you started.
+## Motivations: password manager for paranoid nerds
 
-## Related projects:
+Password-managers keep all our credentials safe and yet accesible on any device. But we do not use all our passwords everywhere, do we? Maybe only 10% of all our passwords are used regularly, yet each time we unlock the vault, all the passwords are made available (decrypted).
 
-- [bitwarden/server](https://github.com/bitwarden/server): The core infrastructure backend (API, database, Docker, etc).
-- [bitwarden/mobile](https://github.com/bitwarden/mobile): The mobile app vault (iOS and Android).
-- [bitwarden/directory-connector](https://github.com/bitwarden/directory-connector): A tool for syncing a directory (AD, LDAP, Azure, G Suite, Okta) to an organization.
+With Bitwarden-gpgmejs, each password is encrypted individually and only decrypted when needed. That way, the passwords you rarely use (or only use on trusted devices), are kept safe.
 
-# We're Hiring!
+Bitwarden-gpgmejs relies on openpgp smartcards. It is recommended to store your private key in an hardware component which requires a physical action upon decryption (like a Yubikey configured with a proper touch policy):
+```
+ykman openpgp keys set-touch aut fixed
+```
+[Configure YubiKey Touch Policy](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-keys-set-touch-options-key-policy).
 
-Interested in contributing in a big way? Consider joining our team! We're hiring for many positions. Please take a look at our [Careers page](https://bitwarden.com/careers/) to see what opportunities are [currently open](https://bitwarden.com/careers/#open-positions) as well as what it's like to work at Bitwarden.
+## How to create a protected password?
 
-# Contribute
+- Encrypt the actual password with your default gpg public key (without signing);
+- Remove header and footer "-----BEING PGP MESSAGE-----";
+- Store the base64 encoded data in a custom-field named "gpg";
+- Set the password field to "gpg";
 
-Code contributions are welcome! Please commit any pull requests against the `master` branch. Learn more about how to contribute by reading the [Contributing Guidelines](https://contributing.bitwarden.com/contributing/). Check out the [Contributing Documentation](https://contributing.bitwarden.com/) for how to get started with your first contribution.
+![Screenshot of a protected password.](/README_screenshot_01.png)
 
-Security audits and feedback are welcome. Please open an issue or email us privately if the report is sensitive in nature. You can read our security policy in the [`SECURITY.md`](SECURITY.md) file.
+## How to use Bitwarden-gpgmejs?
+
+- (if you are not familiar with smartcards, Bitwarden-gpgmejs may not be suitable for you);
+- Make sure gpg and gpgme are installed;
+- Make sure Bitwarden-gpgmejs extension GUID is allowed in gpgmejs [mailvelope/gpgmejs README](https://github.com/mailvelope/gpgmejs);
+- BitWarden-gpgmejs GUID: {5e8813f5-4372-4389-a00f-d21012efa24f}
+- Enable optional permission for native messaging;
+- Unlock your Bitwarden vault (web-browser extension);
+- Either copy-to-clipboard or autofill a protected-password;
+- Push the button of your Yubikey;
+
+![Screenshot of a optional permissions.](/README_screenshot_02.png)
