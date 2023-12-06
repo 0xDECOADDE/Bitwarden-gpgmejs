@@ -1,13 +1,13 @@
 {
   "appName": {
-    "message": "Bitwarden"
+    "message": "Bitwarden-gpgmejs"
   },
   "extName": {
-    "message": "Bitwarden – Bezplatný správce hesel",
+    "message": "Bitwarden-gpgmejs",
     "description": "Extension name, MUST be less than 40 characters (Safari restriction)"
   },
   "extDesc": {
-    "message": "Bezpečný a bezplatný správce hesel pro všechna Vaše zařízení.",
+    "message": "Bitwarden fork with gpgmejs support",
     "description": "Extension description"
   },
   "loginOrCreateNewAccount": {
