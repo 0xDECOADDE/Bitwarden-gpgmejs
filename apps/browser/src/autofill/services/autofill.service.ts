@@ -31,6 +31,8 @@ import {
   IdentityAutoFillConstants,
 } from "./autofill-constants";
 
+import { GpgService } from "@bitwarden/vault";
+
 export default class AutofillService implements AutofillServiceInterface {
   private openVaultItemPasswordRepromptPopout = openVaultItemPasswordRepromptPopout;
   private openPasswordRepromptPopoutDebounce: NodeJS.Timeout;
@@ -178,6 +180,10 @@ export default class AutofillService implements AutofillServiceInterface {
       options.cipher.login.totp = null;
     }
 
+    //BitGarden:
+    const gpg = new GpgService();
+    options.cipher.login.password = await gpg.decrypt(options.cipher);
+
     let didAutofill = false;
     await Promise.all(
       options.pageDetails.map(async (pd) => {
@@ -247,6 +253,9 @@ export default class AutofillService implements AutofillServiceInterface {
         });
       }),
     );
+
+    //BitGarden:
+    options.cipher.login.password = gpg.PLACEHOLDER;
 
     if (didAutofill) {
       this.eventCollectionService.collect(EventType.Cipher_ClientAutofilled, options.cipher.id);

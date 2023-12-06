@@ -10,6 +10,7 @@ import { CipherType } from "@bitwarden/common/vault/enums";
 import { CipherRepromptType } from "@bitwarden/common/vault/enums/cipher-reprompt-type";
 import { CipherView } from "@bitwarden/common/vault/models/view/cipher.view";
 import { PasswordRepromptService } from "@bitwarden/vault";
+import { GpgService } from "@bitwarden/vault";
 
 @Component({
   selector: "app-action-buttons",
@@ -60,7 +61,11 @@ export class ActionButtonsComponent {
       return;
     }
 
+    //BitGarden:
+    const gpg = new GpgService();
+    value = await gpg.decrypt(cipher);
     this.platformUtilsService.copyToClipboard(value, { window: window });
+    value = gpg.PLACEHOLDER;
     this.platformUtilsService.showToast(
       "info",
       null,
