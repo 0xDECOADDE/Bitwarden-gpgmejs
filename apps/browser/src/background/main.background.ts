@@ -163,6 +163,7 @@ import CommandsBackground from "./commands.background";
 import IdleBackground from "./idle.background";
 import { NativeMessagingBackground } from "./nativeMessaging.background";
 import RuntimeBackground from "./runtime.background";
+import { GpgService } from "@bitwarden/vault";
 
 export default class MainBackground {
   messagingService: MessagingServiceAbstraction;
@@ -248,6 +249,7 @@ export default class MainBackground {
   private runtimeBackground: RuntimeBackground;
   private tabsBackground: TabsBackground;
   private webRequestBackground: WebRequestBackground;
+  private gpgService: GpgService;
 
   private syncTimeout: any;
   private isSafari: boolean;
@@ -272,6 +274,8 @@ export default class MainBackground {
 
     const logoutCallback = async (expired: boolean, userId?: string) =>
       await this.logout(expired, userId);
+
+    this.gpgService = new GpgService();
 
     this.messagingService = this.popupOnlyContext
       ? new BrowserMessagingPrivateModeBackgroundService()
@@ -562,6 +566,7 @@ export default class MainBackground {
       this.logService,
       this.settingsService,
       this.userVerificationService,
+      this.gpgService,
     );
     this.auditService = new AuditService(this.cryptoFunctionService, this.apiService);
 
@@ -713,6 +718,7 @@ export default class MainBackground {
         this.totpService,
         this.eventCollectionService,
         this.userVerificationService,
+        this.gpgService,
       );
 
       this.contextMenusBackground = new ContextMenusBackground(contextMenuClickedHandler);

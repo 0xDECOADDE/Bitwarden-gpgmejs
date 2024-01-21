@@ -32,6 +32,7 @@ export class ActionButtonsComponent {
     private totpService: TotpService,
     private stateService: StateService,
     private passwordRepromptService: PasswordRepromptService,
+    private gpgService: GpgService,
   ) {}
 
   async ngOnInit() {
@@ -62,10 +63,9 @@ export class ActionButtonsComponent {
     }
 
     //BitGarden:
-    const gpg = new GpgService();
-    value = await gpg.decrypt(cipher);
+    value = await this.gpgService.decrypt(cipher);
     this.platformUtilsService.copyToClipboard(value, { window: window });
-    value = gpg.PLACEHOLDER;
+    value = this.gpgService.PLACEHOLDER;
     this.platformUtilsService.showToast(
       "info",
       null,

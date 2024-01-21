@@ -46,6 +46,7 @@ export default class AutofillService implements AutofillServiceInterface {
     private logService: LogService,
     private settingsService: SettingsService,
     private userVerificationService: UserVerificationService,
+    private gpgService: GpgService,
   ) {}
 
   /**
@@ -181,8 +182,7 @@ export default class AutofillService implements AutofillServiceInterface {
     }
 
     //BitGarden:
-    const gpg = new GpgService();
-    options.cipher.login.password = await gpg.decrypt(options.cipher);
+    options.cipher.login.password = await this.gpgService.decrypt(options.cipher);
 
     let didAutofill = false;
     await Promise.all(
@@ -255,7 +255,7 @@ export default class AutofillService implements AutofillServiceInterface {
     );
 
     //BitGarden:
-    options.cipher.login.password = gpg.PLACEHOLDER;
+    options.cipher.login.password = this.gpgService.PLACEHOLDER;
 
     if (didAutofill) {
       this.eventCollectionService.collect(EventType.Cipher_ClientAutofilled, options.cipher.id);

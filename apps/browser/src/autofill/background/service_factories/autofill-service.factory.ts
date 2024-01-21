@@ -62,6 +62,7 @@ export function autofillServiceFactory(
         await logServiceFactory(cache, opts),
         await settingsServiceFactory(cache, opts),
         await userVerificationServiceFactory(cache, opts),
+        null,
       ),
   );
 }

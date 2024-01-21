@@ -64,6 +64,7 @@ describe("AutofillService", () => {
       logService,
       settingsService,
       userVerificationService,
+      null,
     );
   });
 

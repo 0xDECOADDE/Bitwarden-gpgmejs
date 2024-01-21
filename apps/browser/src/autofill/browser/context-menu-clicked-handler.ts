@@ -74,6 +74,7 @@ export class ContextMenuClickedHandler {
     private totpService: TotpService,
     private eventCollectionService: EventCollectionService,
     private userVerificationService: UserVerificationService,
+    private gpgService: GpgService,
   ) {}
 
   static async mv3Create(cachedServices: CachedServices) {
@@ -126,6 +127,7 @@ export class ContextMenuClickedHandler {
       await totpServiceFactory(cachedServices, serviceOptions),
       await eventCollectionServiceFactory(cachedServices, serviceOptions),
       await userVerificationServiceFactory(cachedServices, serviceOptions),
+      null,
     );
   }
 
@@ -278,8 +280,7 @@ export class ContextMenuClickedHandler {
           });
         } else {
           //BitGarden:
-          const gpg = new GpgService();
-          this.copyToClipboard({ text: await gpg.decrypt(cipher), tab: tab });
+          this.copyToClipboard({ text: await this.gpgService.decrypt(cipher), tab: tab });
           this.eventCollectionService.collect(EventType.Cipher_ClientCopiedPassword, cipher.id);
         }
 
