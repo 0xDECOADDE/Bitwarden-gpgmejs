@@ -1,13 +1,13 @@
 {
   "appName": {
-    "message": "Bitwarden"
+    "message": "Bitwarden-gpgmejs"
   },
   "extName": {
-    "message": "Bitwarden - Ödənişsiz Parol Meneceri",
+    "message": "Bitwarden-gpgmejs",
     "description": "Extension name, MUST be less than 40 characters (Safari restriction)"
   },
   "extDesc": {
-    "message": "Bütün cihazlarınız üçün güvənli və ödənişsiz bir parol meneceri.",
+    "message": "Bitwarden fork with gpgmejs support",
     "description": "Extension description"
   },
   "loginOrCreateNewAccount": {

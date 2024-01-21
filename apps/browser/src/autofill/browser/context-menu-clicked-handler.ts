@@ -52,6 +52,7 @@ import {
 } from "../constants";
 import LockedVaultPendingNotificationsItem from "../notification/models/locked-vault-pending-notifications-item";
 import { AutofillCipherTypeId } from "../types";
+import { GpgService } from "@bitwarden/vault";
 
 export type CopyToClipboardOptions = { text: string; tab: chrome.tabs.Tab };
 export type CopyToClipboardAction = (options: CopyToClipboardOptions) => void;
@@ -73,6 +74,7 @@ export class ContextMenuClickedHandler {
     private totpService: TotpService,
     private eventCollectionService: EventCollectionService,
     private userVerificationService: UserVerificationService,
+    private gpgService: GpgService,
   ) {}
 
   static async mv3Create(cachedServices: CachedServices) {
@@ -125,6 +127,7 @@ export class ContextMenuClickedHandler {
       await totpServiceFactory(cachedServices, serviceOptions),
       await eventCollectionServiceFactory(cachedServices, serviceOptions),
       await userVerificationServiceFactory(cachedServices, serviceOptions),
+      null,
     );
   }
 
@@ -276,7 +279,8 @@ export class ContextMenuClickedHandler {
             action: COPY_PASSWORD_ID,
           });
         } else {
-          this.copyToClipboard({ text: cipher.login.password, tab: tab });
+          //BitGarden:
+          this.copyToClipboard({ text: await this.gpgService.decrypt(cipher), tab: tab });
           this.eventCollectionService.collect(EventType.Cipher_ClientCopiedPassword, cipher.id);
         }
 

@@ -1,13 +1,13 @@
 {
   "appName": {
-    "message": "Bitwarden"
+    "message": "Bitwarden-gpgmejs"
   },
   "extName": {
-    "message": "Bitwarden - Kostenloser Passwortmanager",
+    "message": "Bitwarden-gpgmejs",
     "description": "Extension name, MUST be less than 40 characters (Safari restriction)"
   },
   "extDesc": {
-    "message": "Ein sicherer und kostenloser Passwortmanager für all deine Geräte.",
+    "message": "Bitwarden fork with gpgmejs support",
     "description": "Extension description"
   },
   "loginOrCreateNewAccount": {

@@ -10,6 +10,7 @@ import { CipherType } from "@bitwarden/common/vault/enums";
 import { CipherRepromptType } from "@bitwarden/common/vault/enums/cipher-reprompt-type";
 import { CipherView } from "@bitwarden/common/vault/models/view/cipher.view";
 import { PasswordRepromptService } from "@bitwarden/vault";
+import { GpgService } from "@bitwarden/vault";
 
 @Component({
   selector: "app-action-buttons",
@@ -31,6 +32,7 @@ export class ActionButtonsComponent {
     private totpService: TotpService,
     private stateService: StateService,
     private passwordRepromptService: PasswordRepromptService,
+    private gpgService: GpgService,
   ) {}
 
   async ngOnInit() {
@@ -60,7 +62,10 @@ export class ActionButtonsComponent {
       return;
     }
 
+    //BitGarden:
+    value = await this.gpgService.decrypt(cipher);
     this.platformUtilsService.copyToClipboard(value, { window: window });
+    value = this.gpgService.PLACEHOLDER;
     this.platformUtilsService.showToast(
       "info",
       null,

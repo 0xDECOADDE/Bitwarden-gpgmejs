@@ -10,6 +10,7 @@ import { CipherType } from "@bitwarden/common/vault/enums";
 import { CipherRepromptType } from "@bitwarden/common/vault/enums/cipher-reprompt-type";
 import { Cipher } from "@bitwarden/common/vault/models/domain/cipher";
 import { CipherView } from "@bitwarden/common/vault/models/view/cipher.view";
+import { GpgService } from "@bitwarden/vault";
 
 import {
   AUTOFILL_ID,
@@ -70,6 +71,7 @@ describe("ContextMenuClickedHandler", () => {
   let totpService: MockProxy<TotpService>;
   let eventCollectionService: MockProxy<EventCollectionService>;
   let userVerificationService: MockProxy<UserVerificationService>;
+  let gpgService: GpgService;
 
   let sut: ContextMenuClickedHandler;
 
@@ -93,6 +95,7 @@ describe("ContextMenuClickedHandler", () => {
       totpService,
       eventCollectionService,
       userVerificationService,
+      gpgService,
     );
   });
 

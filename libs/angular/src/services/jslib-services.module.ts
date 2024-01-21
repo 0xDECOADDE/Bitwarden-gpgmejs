@@ -178,6 +178,7 @@ import {
   ImportServiceAbstraction,
 } from "@bitwarden/importer/core";
 import { PasswordRepromptService } from "@bitwarden/vault";
+import { GpgService } from "@bitwarden/vault";
 
 import { AuthGuard } from "../auth/guards/auth.guard";
 import { UnauthGuard } from "../auth/guards/unauth.guard";
@@ -210,6 +211,7 @@ import { ModalService } from "./modal.service";
     UnauthGuard,
     ModalService,
     PasswordRepromptService,
+    GpgService,
 
     { provide: WINDOW, useValue: window },
     {

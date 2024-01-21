@@ -68,6 +68,7 @@ export function autofillServiceFactory(
         await settingsServiceFactory(cache, opts),
         await userVerificationServiceFactory(cache, opts),
         await configServiceFactory(cache, opts),
+        null,
       ),
   );
 }
