@@ -1,10 +1,9 @@
 import { mock, mockReset } from "jest-mock-extended";
 
 import { UserVerificationService } from "@bitwarden/common/auth/services/user-verification/user-verification.service";
+import { AutofillSettingsService } from "@bitwarden/common/autofill/services/autofill-settings.service";
 import { EventType } from "@bitwarden/common/enums";
-import { FeatureFlag } from "@bitwarden/common/enums/feature-flag.enum";
 import { LogService } from "@bitwarden/common/platform/abstractions/log.service";
-import { ConfigService } from "@bitwarden/common/platform/services/config/config.service";
 import { EventCollectionService } from "@bitwarden/common/services/event/event-collection.service";
 import { SettingsService } from "@bitwarden/common/services/settings.service";
 import {
@@ -27,17 +26,17 @@ import { TotpService } from "@bitwarden/common/vault/services/totp.service";
 import { BrowserApi } from "../../platform/browser/browser-api";
 import { BrowserStateService } from "../../platform/services/browser-state.service";
 import { AutofillPort } from "../enums/autofill-port.enums";
+import AutofillField from "../models/autofill-field";
+import AutofillPageDetails from "../models/autofill-page-details";
+import AutofillScript from "../models/autofill-script";
 import {
   createAutofillFieldMock,
   createAutofillPageDetailsMock,
   createAutofillScriptMock,
   createChromeTabMock,
   createGenerateFillScriptOptionsMock,
-} from "../jest/autofill-mocks";
-import { triggerTestFailure } from "../jest/testing-utils";
-import AutofillField from "../models/autofill-field";
-import AutofillPageDetails from "../models/autofill-page-details";
-import AutofillScript from "../models/autofill-script";
+} from "../spec/autofill-mocks";
+import { triggerTestFailure } from "../spec/testing-utils";
 import { AutofillOverlayVisibility } from "../utils/autofill-overlay.enum";
 
 import {
@@ -52,23 +51,23 @@ describe("AutofillService", () => {
   let autofillService: AutofillService;
   const cipherService = mock<CipherService>();
   const stateService = mock<BrowserStateService>();
+  const autofillSettingsService = mock<AutofillSettingsService>();
   const totpService = mock<TotpService>();
   const eventCollectionService = mock<EventCollectionService>();
   const logService = mock<LogService>();
   const settingsService = mock<SettingsService>();
   const userVerificationService = mock<UserVerificationService>();
-  const configService = mock<ConfigService>();
 
   beforeEach(() => {
     autofillService = new AutofillService(
       cipherService,
       stateService,
+      autofillSettingsService,
       totpService,
       eventCollectionService,
       logService,
       settingsService,
       userVerificationService,
-      configService,
       null,
     );
   });
@@ -88,6 +87,10 @@ describe("AutofillService", () => {
       tab2 = createChromeTabMock({ id: 2, url: "http://some-url.com" });
       tab3 = createChromeTabMock({ id: 3, url: "chrome-extension://some-extension-route" });
       jest.spyOn(BrowserApi, "tabsQuery").mockResolvedValueOnce([tab1, tab2]);
+      jest
+        .spyOn(autofillService, "getOverlayVisibility")
+        .mockResolvedValue(AutofillOverlayVisibility.OnFieldFocus);
+      jest.spyOn(autofillService, "getAutofillOnPageLoad").mockResolvedValue(true);
     });
 
     it("queries all browser tabs and injects the autofill scripts into them", async () => {
@@ -127,6 +130,8 @@ describe("AutofillService", () => {
       });
       autofillService["autofillScriptPortsSet"] = new Set([port1, port2]);
 
+      // FIXME: Verify that this floating promise is intentional. If it is, add an explanatory comment and ensure there is proper error handling.
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       autofillService.reloadAutofillScripts();
 
       expect(port1.disconnect).toHaveBeenCalled();
@@ -137,7 +142,10 @@ describe("AutofillService", () => {
     it("re-injects the autofill scripts in all tabs", () => {
       autofillService["autofillScriptPortsSet"] = new Set([mock<chrome.runtime.Port>()]);
       jest.spyOn(autofillService as any, "injectAutofillScriptsInAllTabs");
+      jest.spyOn(autofillService, "getAutofillOnPageLoad").mockResolvedValue(true);
 
+      // FIXME: Verify that this floating promise is intentional. If it is, add an explanatory comment and ensure there is proper error handling.
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       autofillService.reloadAutofillScripts();
 
       expect(autofillService["injectAutofillScriptsInAllTabs"]).toHaveBeenCalled();
@@ -145,8 +153,7 @@ describe("AutofillService", () => {
   });
 
   describe("injectAutofillScripts", () => {
-    const autofillV1Script = "autofill.js";
-    const autofillV2BootstrapScript = "bootstrap-autofill.js";
+    const autofillBootstrapScript = "bootstrap-autofill.js";
     const autofillOverlayBootstrapScript = "bootstrap-autofill-overlay.js";
     const defaultAutofillScripts = ["autofiller.js", "notificationBar.js", "contextMenuHandler.js"];
     const defaultExecuteScriptOptions = { runAt: "document_start" };
@@ -157,53 +164,42 @@ describe("AutofillService", () => {
       tabMock = createChromeTabMock();
       sender = { tab: tabMock, frameId: 1 };
       jest.spyOn(BrowserApi, "executeScriptInTab").mockImplementation();
+      jest
+        .spyOn(autofillService, "getOverlayVisibility")
+        .mockResolvedValue(AutofillOverlayVisibility.OnFieldFocus);
     });
 
     it("accepts an extension message sender and injects the autofill scripts into the tab of the sender", async () => {
+      jest.spyOn(autofillService, "getAutofillOnPageLoad").mockResolvedValue(true);
+
       await autofillService.injectAutofillScripts(sender.tab, sender.frameId, true);
 
-      [autofillV1Script, ...defaultAutofillScripts].forEach((scriptName) => {
+      [autofillOverlayBootstrapScript, ...defaultAutofillScripts].forEach((scriptName) => {
         expect(BrowserApi.executeScriptInTab).toHaveBeenCalledWith(tabMock.id, {
           file: `content/${scriptName}`,
           frameId: sender.frameId,
           ...defaultExecuteScriptOptions,
         });
       });
+    });
+
+    it("skips injecting autofiller script when autofill on load setting is disabled", async () => {
+      jest.spyOn(autofillService, "getAutofillOnPageLoad").mockResolvedValue(false);
+
+      await autofillService.injectAutofillScripts(sender.tab, sender.frameId, true);
+
       expect(BrowserApi.executeScriptInTab).not.toHaveBeenCalledWith(tabMock.id, {
-        file: `content/${autofillV2BootstrapScript}`,
+        file: "content/autofiller.js",
         frameId: sender.frameId,
         ...defaultExecuteScriptOptions,
       });
     });
 
-    it("will inject the bootstrap-autofill script if the enableAutofillV2 flag is set", async () => {
+    it("will inject the bootstrap-autofill-overlay script if the user has the autofill overlay enabled", async () => {
       jest
-        .spyOn(configService, "getFeatureFlag")
-        .mockImplementation((flag) => Promise.resolve(flag === FeatureFlag.AutofillV2));
-
-      await autofillService.injectAutofillScripts(sender.tab, sender.frameId);
-
-      expect(BrowserApi.executeScriptInTab).toHaveBeenCalledWith(tabMock.id, {
-        file: `content/${autofillV2BootstrapScript}`,
-        frameId: sender.frameId,
-        ...defaultExecuteScriptOptions,
-      });
-      expect(BrowserApi.executeScriptInTab).not.toHaveBeenCalledWith(tabMock.id, {
-        file: `content/${autofillV1Script}`,
-        frameId: sender.frameId,
-        ...defaultExecuteScriptOptions,
-      });
-    });
-
-    it("will inject the bootstrap-autofill-overlay script if the enableAutofillOverlay flag is set and the user has the autofill overlay enabled", async () => {
-      jest
-        .spyOn(configService, "getFeatureFlag")
-        .mockImplementation((flag) =>
-          Promise.resolve(flag === FeatureFlag.AutofillOverlay || flag === FeatureFlag.AutofillV2),
-        );
-      jest
-        .spyOn(autofillService["settingsService"], "getAutoFillOverlayVisibility")
+        .spyOn(autofillService, "getOverlayVisibility")
         .mockResolvedValue(AutofillOverlayVisibility.OnFieldFocus);
+      jest.spyOn(autofillService, "getAutofillOnPageLoad").mockResolvedValue(true);
 
       await autofillService.injectAutofillScripts(sender.tab, sender.frameId);
 
@@ -213,46 +209,39 @@ describe("AutofillService", () => {
         ...defaultExecuteScriptOptions,
       });
       expect(BrowserApi.executeScriptInTab).not.toHaveBeenCalledWith(tabMock.id, {
-        file: `content/${autofillV1Script}`,
-        frameId: sender.frameId,
-        ...defaultExecuteScriptOptions,
-      });
-      expect(BrowserApi.executeScriptInTab).not.toHaveBeenCalledWith(tabMock.id, {
-        file: `content/${autofillV2BootstrapScript}`,
+        file: `content/${autofillBootstrapScript}`,
         frameId: sender.frameId,
         ...defaultExecuteScriptOptions,
       });
     });
 
-    it("will inject the bootstrap-autofill script if the enableAutofillOverlay flag is set but the user does not have the autofill overlay enabled", async () => {
+    it("will inject the bootstrap-autofill script if the user does not have the autofill overlay enabled", async () => {
       jest
-        .spyOn(configService, "getFeatureFlag")
-        .mockImplementation((flag) =>
-          Promise.resolve(flag === FeatureFlag.AutofillOverlay || flag === FeatureFlag.AutofillV2),
-        );
-      jest
-        .spyOn(autofillService["settingsService"], "getAutoFillOverlayVisibility")
+        .spyOn(autofillService, "getOverlayVisibility")
         .mockResolvedValue(AutofillOverlayVisibility.Off);
+      jest.spyOn(autofillService, "getAutofillOnPageLoad").mockResolvedValue(true);
 
       await autofillService.injectAutofillScripts(sender.tab, sender.frameId);
 
       expect(BrowserApi.executeScriptInTab).toHaveBeenCalledWith(tabMock.id, {
-        file: `content/${autofillV2BootstrapScript}`,
+        file: `content/${autofillBootstrapScript}`,
         frameId: sender.frameId,
         ...defaultExecuteScriptOptions,
       });
       expect(BrowserApi.executeScriptInTab).not.toHaveBeenCalledWith(tabMock.id, {
-        file: `content/${autofillV1Script}`,
+        file: `content/${autofillOverlayBootstrapScript}`,
         frameId: sender.frameId,
         ...defaultExecuteScriptOptions,
       });
     });
 
-    it("injects the bootstrap-content-message-handler script if not injecting on page load", async () => {
+    it("injects the content-message-handler script if not injecting on page load", async () => {
+      jest.spyOn(autofillService, "getAutofillOnPageLoad").mockResolvedValue(true);
+
       await autofillService.injectAutofillScripts(sender.tab, sender.frameId, false);
 
       expect(BrowserApi.executeScriptInTab).toHaveBeenCalledWith(tabMock.id, {
-        file: "content/bootstrap-content-message-handler.js",
+        file: "content/content-message-handler.js",
         ...defaultExecuteScriptOptions,
       });
     });
@@ -663,12 +652,12 @@ describe("AutofillService", () => {
       const totpCode = "123456";
       autofillOptions.cipher.login.totp = "totp";
       jest.spyOn(stateService, "getCanAccessPremium").mockResolvedValue(true);
-      jest.spyOn(stateService, "getDisableAutoTotpCopy").mockResolvedValue(false);
+      jest.spyOn(autofillService, "getShouldAutoCopyTotp").mockResolvedValue(true);
       jest.spyOn(totpService, "getCode").mockResolvedValue(totpCode);
 
       const autofillResult = await autofillService.doAutoFill(autofillOptions);
 
-      expect(stateService.getDisableAutoTotpCopy).toHaveBeenCalled();
+      expect(autofillService.getShouldAutoCopyTotp).toHaveBeenCalled();
       expect(totpService.getCode).toHaveBeenCalledWith(autofillOptions.cipher.login.totp);
       expect(autofillResult).toBe(totpCode);
     });
@@ -676,11 +665,11 @@ describe("AutofillService", () => {
     it("does not return a TOTP value if the user does not have premium features", async () => {
       autofillOptions.cipher.login.totp = "totp";
       jest.spyOn(stateService, "getCanAccessPremium").mockResolvedValue(false);
-      jest.spyOn(stateService, "getDisableAutoTotpCopy").mockResolvedValue(false);
+      jest.spyOn(autofillService, "getShouldAutoCopyTotp").mockResolvedValue(true);
 
       const autofillResult = await autofillService.doAutoFill(autofillOptions);
 
-      expect(stateService.getDisableAutoTotpCopy).not.toHaveBeenCalled();
+      expect(autofillService.getShouldAutoCopyTotp).not.toHaveBeenCalled();
       expect(totpService.getCode).not.toHaveBeenCalled();
       expect(autofillResult).toBeNull();
     });
@@ -696,12 +685,12 @@ describe("AutofillService", () => {
 
     it("returns a null value if the login does not contain a TOTP value", async () => {
       autofillOptions.cipher.login.totp = undefined;
-      jest.spyOn(stateService, "getDisableAutoTotpCopy");
+      jest.spyOn(autofillService, "getShouldAutoCopyTotp");
       jest.spyOn(totpService, "getCode");
 
       const autofillResult = await autofillService.doAutoFill(autofillOptions);
 
-      expect(stateService.getDisableAutoTotpCopy).not.toHaveBeenCalled();
+      expect(autofillService.getShouldAutoCopyTotp).not.toHaveBeenCalled();
       expect(totpService.getCode).not.toHaveBeenCalled();
       expect(autofillResult).toBeNull();
     });
@@ -720,13 +709,13 @@ describe("AutofillService", () => {
       autofillOptions.cipher.login.totp = "totp";
       autofillOptions.cipher.organizationUseTotp = true;
       jest.spyOn(stateService, "getCanAccessPremium").mockResolvedValue(true);
-      jest.spyOn(stateService, "getDisableAutoTotpCopy").mockResolvedValue(true);
+      jest.spyOn(autofillService, "getShouldAutoCopyTotp").mockResolvedValue(false);
       jest.spyOn(totpService, "getCode");
 
       const autofillResult = await autofillService.doAutoFill(autofillOptions);
 
       expect(stateService.getCanAccessPremium).toHaveBeenCalled();
-      expect(stateService.getDisableAutoTotpCopy).toHaveBeenCalled();
+      expect(autofillService.getShouldAutoCopyTotp).toHaveBeenCalled();
       expect(totpService.getCode).not.toHaveBeenCalled();
       expect(autofillResult).toBeNull();
     });

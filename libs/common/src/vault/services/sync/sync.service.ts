@@ -318,8 +318,6 @@ export class SyncService implements SyncServiceAbstraction {
 
     await this.setForceSetPasswordReasonIfNeeded(response);
 
-    await this.syncProfileOrganizations(response);
-
     const providers: { [id: string]: ProviderData } = {};
     response.providers.forEach((p) => {
       providers[p.id] = new ProviderData(p);
@@ -327,10 +325,14 @@ export class SyncService implements SyncServiceAbstraction {
 
     await this.providerService.save(providers);
 
+    await this.syncProfileOrganizations(response);
+
     if (await this.keyConnectorService.userNeedsMigration()) {
       await this.keyConnectorService.setConvertAccountRequired(true);
       this.messagingService.send("convertAccountToKeyConnector");
     } else {
+      // FIXME: Verify that this floating promise is intentional. If it is, add an explanatory comment and ensure there is proper error handling.
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       this.keyConnectorService.removeConvertAccountRequired();
     }
   }
