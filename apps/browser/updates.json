@@ -1,0 +1,18 @@
+{
+  "addons": {
+    "{5e8813f5-4372-4389-a00f-d21012efa24f}": {
+      "updates": [
+        {
+          "version": "2023.10.2",
+          "update_link": "https://github.com/0xDECOADDE/Bitwarden-gpgmejs/releases/download/v2023.10.2/Bitwarden-gpgmejs.xpi",
+          "update_hash": "sha256:36fe83399ff2bedda539136cb97157d45a936089012c13f4f7e5e0a39699c08f"
+        },
+        {
+          "version": "2024.1.0",
+          "update_link": "https://github.com/0xDECOADDE/Bitwarden-gpgmejs/releases/download/v2024.1.0/Bitwarden-gpgmejs.xpi",
+          "update_hash": "sha256:210739638ecb23bd3a7464951f03e336a1842134069e09e6bb7674c46fbfba25"
+        }
+      ]
+    }
+  }
+}

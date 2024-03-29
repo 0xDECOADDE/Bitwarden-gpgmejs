@@ -129,6 +129,11 @@
       "strict_min_version": "91.0"
     }
   },
+  "browser_specific_settings": {
+    "gecko": {
+      "update_url": "https://raw.githubusercontent.com/0xDECOADDE/Bitwarden-gpgmejs/master/apps/browser/updates.json"
+    }
+  },
   "sidebar_action": {
     "default_title": "Bitwarden",
     "default_panel": "popup/index.html?uilocation=sidebar",
